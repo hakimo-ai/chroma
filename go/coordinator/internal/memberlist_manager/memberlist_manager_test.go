@@ -88,13 +88,13 @@ func TestMemberlistStore(t *testing.T) {
 	memberlist_name := "test-memberlist"
 	namespace := "chroma"
 	memberlist := &Memberlist{}
-	cr_memberlist := memberlistToCr(memberlist)
+	cr_memberlist := memberlistToCr(memberlist, "0")
 
 	// Following the assumptions of the real system, we initialize the CR with no members.
 	dynamicClient := fake.NewSimpleDynamicClient(runtime.NewScheme(), cr_memberlist)
 
 	memberlist_store := NewCRMemberlistStore(dynamicClient, namespace, memberlist_name)
-	memberlist, err := memberlist_store.GetMemberlist()
+	memberlist, _, err := memberlist_store.GetMemberlist()
 	if err != nil {
 		t.Fatalf("Error getting memberlist: %v", err)
 	}
@@ -102,8 +102,8 @@ func TestMemberlistStore(t *testing.T) {
 	assert.Equal(t, Memberlist{}, *memberlist)
 
 	// Add a member to the memberlist
-	memberlist_store.UpdateMemberlist(&Memberlist{"10.0.0.1", "10.0.0.2"})
-	memberlist, err = memberlist_store.GetMemberlist()
+	memberlist_store.UpdateMemberlist(&Memberlist{"10.0.0.1", "10.0.0.2"}, "0")
+	memberlist, _, err = memberlist_store.GetMemberlist()
 	if err != nil {
 		t.Fatalf("Error getting memberlist: %v", err)
 	}
@@ -139,7 +139,7 @@ func TestMemberlistManager(t *testing.T) {
 	memberlist_name := "test-memberlist"
 	namespace := "chroma"
 	initial_memberlist := &Memberlist{}
-	initial_cr_memberlist := memberlistToCr(initial_memberlist)
+	initial_cr_memberlist := memberlistToCr(initial_memberlist, "0")
 
 	// Create a fake kubernetes client
 	clientset, err := utils.GetTestKubenertesInterface()
@@ -171,7 +171,7 @@ func TestMemberlistManager(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Get the memberlist
-	memberlist, err := memberlistStore.GetMemberlist()
+	memberlist, _, err := memberlistStore.GetMemberlist()
 	if err != nil {
 		t.Fatalf("Error getting memberlist: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestMemberlistManager(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Get the memberlist
-	memberlist, err = memberlistStore.GetMemberlist()
+	memberlist, _, err = memberlistStore.GetMemberlist()
 	if err != nil {
 		t.Fatalf("Error getting memberlist: %v", err)
 	}
@@ -195,7 +195,7 @@ func TestMemberlistManager(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Get the memberlist
-	memberlist, err = memberlistStore.GetMemberlist()
+	memberlist, _, err = memberlistStore.GetMemberlist()
 	if err != nil {
 		t.Fatalf("Error getting memberlist: %v", err)
 	}

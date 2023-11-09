@@ -3,6 +3,8 @@ package memberlist_manager
 import (
 	"fmt"
 
+	"github.com/pingcap/log"
+	"go.uber.org/zap"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -61,13 +63,17 @@ func (m *MemberlistManager) run() {
 			m.workqueue.Done(key)
 			continue
 		}
-		m.reconcile(key.(string), nodeUpdate)
+		err = m.reconcile(key.(string), nodeUpdate)
+		if err != nil {
+			// TODO: retry
+			log.Error("Error reconciling", zap.Error(err))
+		}
 		m.workqueue.Done(key)
 	}
 }
 
 func (m *MemberlistManager) reconcile(node_ip string, status Status) error {
-	memberlist, err := m.memberlistStore.GetMemberlist()
+	memberlist, resourceVersion, err := m.memberlistStore.GetMemberlist()
 	if err != nil {
 		return err
 	}
@@ -87,7 +93,7 @@ func (m *MemberlistManager) reconcile(node_ip string, status Status) error {
 	if !exists && status == Ready {
 		new_memberlist = append(new_memberlist, node_ip)
 	}
-	return m.memberlistStore.UpdateMemberlist(&new_memberlist)
+	return m.memberlistStore.UpdateMemberlist(&new_memberlist, resourceVersion)
 }
 
 func (m *MemberlistManager) Stop() error {
